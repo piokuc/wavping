@@ -1,0 +1,106 @@
+name: macOS Conda Build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-macos-conda:
+    runs-on: macos-latest
+
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: build
+          auto-activate-base: false
+          channels: conda-forge,defaults
+          channel-priority: strict
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: |
+          conda install -y conda-build anaconda-client
+
+      - name: Build conda package
+        env:
+          CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
+        run: |
+          mkdir -p "$CONDA_BLD_PATH"
+          conda build recipe --output-folder "$CONDA_BLD_PATH"
+
+      - name: Resolve built package path
+        id: package
+        env:
+          CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
+        run: |
+          package_path="$(conda build recipe --output-folder "$CONDA_BLD_PATH" --output | tail -n 1)"
+          if [ -z "$package_path" ]; then
+            echo "No conda package path was produced" >&2
+            exit 1
+          fi
+          echo "path=$package_path" >> "$GITHUB_OUTPUT"
+          echo "Built package: $package_path"
+
+      - name: Upload conda artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wavping-conda-macos
+          path: ${{ steps.package.outputs.path }}
+          if-no-files-found: error
+
+  upload-macos-conda:
+    runs-on: macos-latest
+    needs: build-macos-conda
+    if: startsWith(github.ref, 'refs/tags/')
+
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - name: Download built package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wavping-conda-macos
+          path: ${{ runner.temp }}/wavping-conda-macos
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: upload
+          auto-activate-base: false
+          channels: conda-forge,defaults
+          channel-priority: strict
+          python-version: "3.12"
+
+      - name: Install upload client
+        run: |
+          conda install -y anaconda-client
+
+      - name: Upload package to Anaconda.org
+        env:
+          ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        run: |
+          if [ -z "$ANACONDA_API_TOKEN" ]; then
+            echo "Missing required GitHub secret: ANACONDA_API_TOKEN" >&2
+            exit 1
+          fi
+          package_path="$(find "$RUNNER_TEMP/wavping-conda-macos" -type f \( -name '*.conda' -o -name '*.tar.bz2' \) | head -n 1)"
+          if [ -z "$package_path" ]; then
+            echo "No conda package artifact found to upload" >&2
+            exit 1
+          fi
+          python -m binstar_client.scripts.cli -t "$ANACONDA_API_TOKEN" upload --skip-existing "$package_path"

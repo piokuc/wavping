@@ -39,14 +39,14 @@ jobs:
           CONDA_BLD_PATH: C:\cb
         run: |
           New-Item -ItemType Directory -Force -Path $env:CONDA_BLD_PATH | Out-Null
-          conda build recipe --output-folder $env:CONDA_BLD_PATH
+          conda build recipe --croot $env:CONDA_BLD_PATH --output-folder $env:CONDA_BLD_PATH
 
       - name: Resolve built package path
         id: package
         env:
           CONDA_BLD_PATH: C:\cb
         run: |
-          $packagePath = conda build recipe --output-folder $env:CONDA_BLD_PATH --output | Select-Object -Last 1
+          $packagePath = conda build recipe --croot $env:CONDA_BLD_PATH --output-folder $env:CONDA_BLD_PATH --output | Select-Object -Last 1
           if (-not $packagePath) {
             throw "No conda package path was produced"
           }

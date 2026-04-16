@@ -34,6 +34,11 @@ jobs:
         run: |
           conda install -y conda-build anaconda-client
 
+      - name: Diagnose compiler toolchain
+        run: |
+          where cl
+          cl
+
       - name: Build conda package
         env:
           CONDA_BLD_PATH: C:\cb

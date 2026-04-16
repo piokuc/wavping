@@ -75,7 +75,18 @@ conda build recipe --output
 anaconda upload "$(conda build recipe --output)"
 ```
 
-I could not run the conda steps in this environment because `conda` is not installed here.
+## GitHub Actions Linux build
+
+The repository includes a GitHub Actions workflow at
+`.github/workflows/linux-conda.yml` that builds the `linux-64` conda package on
+`ubuntu-latest` for pushes to `main`, pull requests, and manual runs. The
+resulting `.conda` package is uploaded as a workflow artifact named
+`wavping-conda-linux-64`.
+
+If you set the repository secret `ANACONDA_API_TOKEN`, a push of a tag matching
+`v*` will also upload the built `linux-64` package to Anaconda.org. The workflow
+uses `--skip-existing` so rerunning the same tagged release does not fail just
+because the file is already present.
 
 ## Notes
 

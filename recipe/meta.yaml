@@ -29,7 +29,7 @@ test:
     - wavping
   commands:
     - python -c "import wavping; print(wavping.__version__)"
-    - wavping --help
+    - python -m wavping --version
 
 about:
   summary: Play short WAV files from Python using a tiny native backend.

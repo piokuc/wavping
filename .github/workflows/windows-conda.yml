@@ -34,6 +34,11 @@ jobs:
         run: |
           conda install -y conda-build anaconda-client
 
+      - name: Set up MSVC build environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Diagnose compiler toolchain
         run: |
           where cl

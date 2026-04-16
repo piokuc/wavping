@@ -36,7 +36,7 @@ jobs:
 
       - name: Build conda package
         env:
-          CONDA_BLD_PATH: ${{ github.workspace }}\conda-bld
+          CONDA_BLD_PATH: ${{ runner.temp }}\conda-bld
         run: |
           New-Item -ItemType Directory -Force -Path $env:CONDA_BLD_PATH | Out-Null
           conda build recipe --output-folder $env:CONDA_BLD_PATH
@@ -44,7 +44,7 @@ jobs:
       - name: Resolve built package path
         id: package
         env:
-          CONDA_BLD_PATH: ${{ github.workspace }}\conda-bld
+          CONDA_BLD_PATH: ${{ runner.temp }}\conda-bld
         run: |
           $packagePath = conda build recipe --output-folder $env:CONDA_BLD_PATH --output | Select-Object -Last 1
           if (-not $packagePath) {

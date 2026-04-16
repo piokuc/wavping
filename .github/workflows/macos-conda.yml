@@ -36,7 +36,7 @@ jobs:
 
       - name: Build conda package
         env:
-          CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
+          CONDA_BLD_PATH: ${{ runner.temp }}/conda-bld
         run: |
           mkdir -p "$CONDA_BLD_PATH"
           conda build recipe --output-folder "$CONDA_BLD_PATH"
@@ -44,7 +44,7 @@ jobs:
       - name: Resolve built package path
         id: package
         env:
-          CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
+          CONDA_BLD_PATH: ${{ runner.temp }}/conda-bld
         run: |
           package_path="$(conda build recipe --output-folder "$CONDA_BLD_PATH" --output | tail -n 1)"
           if [ -z "$package_path" ]; then

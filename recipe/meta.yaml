@@ -1,0 +1,39 @@
+{% set name = "wavping" %}
+{% set version = "0.1.0" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  path: ..
+
+build:
+  number: 0
+  skip: true  # [py<39]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+  host:
+    - pip
+    - python
+    - setuptools >=69
+    - wheel
+  run:
+    - python
+
+test:
+  imports:
+    - wavping
+  commands:
+    - python -c "import wavping; print(wavping.__version__)"
+    - wavping --help
+
+about:
+  summary: Play short WAV files from Python using a tiny native backend.
+  license: MIT
+  license_file:
+    - LICENSE
+    - third_party/miniaudio/LICENSE.txt

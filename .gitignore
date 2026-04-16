@@ -1,0 +1,12 @@
+__pycache__/
+*.egg-info/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+build/
+dist/
+conda-bld/
+examples/ping.wav
+mail.txt

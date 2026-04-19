@@ -192,24 +192,16 @@ If the repository secret `ANACONDA_API_TOKEN` is configured, a tag push matching
 
 ## Anaconda package links
 
-The exact Anaconda.org owner is not hardcoded in this repository. Uploads go to
-the account that owns `ANACONDA_API_TOKEN`, so the final public package URL
-depends on that token.
+The published package is available on Anaconda.org here:
 
-Once published, the expected public links are:
-
-- Channel page: `https://anaconda.org/<owner>/repo`
-- Package page: `https://anaconda.org/<owner>/wavping`
+- Channel page: <https://anaconda.org/piokuc>
+- Package page: <https://anaconda.org/piokuc/wavping>
 
 Typical install command after publication:
 
 ```bash
-conda install <owner>::wavping
+conda install piokuc::wavping
 ```
-
-If you want the README to point to a concrete public page instead of this URL
-pattern, set a fixed publication owner and replace `<owner>` with that channel
-name after the first upload.
 
 ## Notes
 

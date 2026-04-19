@@ -33,6 +33,9 @@ test:
 
 about:
   summary: Play short WAV files from Python using a tiny native backend.
+  home: https://github.com/piokuc/wavping
+  dev_url: https://github.com/piokuc/wavping
+  doc_url: https://github.com/piokuc/wavping/blob/main/README.md
   license: MIT
   license_file:
     - LICENSE

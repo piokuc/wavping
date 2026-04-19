@@ -41,24 +41,28 @@ jobs:
           mkdir -p "$CONDA_BLD_PATH"
           conda build recipe --output-folder "$CONDA_BLD_PATH"
 
-      - name: Resolve built package path
-        id: package
+      - name: Collect built package paths
+        id: packages
         env:
           CONDA_BLD_PATH: ${{ runner.temp }}/conda-bld
         run: |
-          package_path="$(conda build recipe --output-folder "$CONDA_BLD_PATH" --output | tail -n 1)"
-          if [ -z "$package_path" ]; then
-            echo "No conda package path was produced" >&2
+          package_list="$RUNNER_TEMP/wavping-package-paths.txt"
+          conda build recipe --output-folder "$CONDA_BLD_PATH" --output | tee "$package_list"
+          package_count="$(grep -c . "$package_list" || true)"
+          if [ "$package_count" -eq 0 ]; then
+            echo "No conda package paths were produced" >&2
             exit 1
           fi
-          echo "path=$package_path" >> "$GITHUB_OUTPUT"
-          echo "Built package: $package_path"
+          echo "list=$package_list" >> "$GITHUB_OUTPUT"
+          echo "Built package count: $package_count"
 
-      - name: Upload conda artifact
+      - name: Upload conda artifacts
         uses: actions/upload-artifact@v4
         with:
           name: wavping-conda-macos
-          path: ${{ steps.package.outputs.path }}
+          path: |
+            ${{ runner.temp }}/conda-bld/osx-arm64/*.conda
+            ${{ runner.temp }}/conda-bld/osx-arm64/*.tar.bz2
           if-no-files-found: error
 
   upload-macos-conda:
@@ -98,9 +102,9 @@ jobs:
             echo "Missing required GitHub secret: ANACONDA_API_TOKEN" >&2
             exit 1
           fi
-          package_path="$(find "$RUNNER_TEMP/wavping-conda-macos" -type f \( -name '*.conda' -o -name '*.tar.bz2' \) | head -n 1)"
-          if [ -z "$package_path" ]; then
+          mapfile -t package_paths < <(find "$RUNNER_TEMP/wavping-conda-macos" -type f \( -name '*.conda' -o -name '*.tar.bz2' \) | sort)
+          if [ "${#package_paths[@]}" -eq 0 ]; then
             echo "No conda package artifact found to upload" >&2
             exit 1
           fi
-          python -m binstar_client.scripts.cli -t "$ANACONDA_API_TOKEN" upload --skip-existing "$package_path"
+          python -m binstar_client.scripts.cli -t "$ANACONDA_API_TOKEN" upload --skip-existing "${package_paths[@]}"

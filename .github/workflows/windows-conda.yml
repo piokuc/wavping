@@ -51,23 +51,27 @@ jobs:
           New-Item -ItemType Directory -Force -Path $env:CONDA_BLD_PATH | Out-Null
           conda build recipe --croot $env:CONDA_BLD_PATH --output-folder $env:CONDA_BLD_PATH
 
-      - name: Resolve built package path
-        id: package
+      - name: Collect built package paths
+        id: packages
         env:
           CONDA_BLD_PATH: C:\cb
         run: |
-          $packagePath = conda build recipe --croot $env:CONDA_BLD_PATH --output-folder $env:CONDA_BLD_PATH --output | Select-Object -Last 1
-          if (-not $packagePath) {
-            throw "No conda package path was produced"
+          $packagePaths = @(conda build recipe --croot $env:CONDA_BLD_PATH --output-folder $env:CONDA_BLD_PATH --output)
+          if (-not $packagePaths -or $packagePaths.Count -eq 0) {
+            throw "No conda package paths were produced"
           }
-          "path=$packagePath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          Write-Host "Built package: $packagePath"
+          $packageList = Join-Path $env:RUNNER_TEMP "wavping-package-paths.txt"
+          $packagePaths | Out-File -FilePath $packageList -Encoding utf8
+          "list=$packageList" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Built package count: $($packagePaths.Count)"
 
-      - name: Upload conda artifact
+      - name: Upload conda artifacts
         uses: actions/upload-artifact@v4
         with:
           name: wavping-conda-win-64
-          path: ${{ steps.package.outputs.path }}
+          path: |
+            C:\cb\win-64\*.conda
+            C:\cb\win-64\*.tar.bz2
           if-no-files-found: error
 
   upload-windows-conda:
@@ -107,12 +111,13 @@ jobs:
             throw "Missing required GitHub secret: ANACONDA_API_TOKEN"
           }
 
-          $packagePath = Get-ChildItem -Path $env:RUNNER_TEMP\wavping-conda-win-64 -Recurse -File |
+          $packagePaths = Get-ChildItem -Path $env:RUNNER_TEMP\wavping-conda-win-64 -Recurse -File |
             Where-Object { $_.Name -like '*.conda' -or $_.Name -like '*.tar.bz2' } |
-            Select-Object -First 1
+            Sort-Object FullName
 
-          if (-not $packagePath) {
+          if (-not $packagePaths) {
             throw "No conda package artifact found to upload"
           }
 
-          python -m binstar_client.scripts.cli -t $env:ANACONDA_API_TOKEN upload --skip-existing $packagePath.FullName
+          $packageArgs = $packagePaths | ForEach-Object { $_.FullName }
+          python -m binstar_client.scripts.cli -t $env:ANACONDA_API_TOKEN upload --skip-existing @packageArgs

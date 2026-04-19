@@ -54,6 +54,12 @@ targets:
 - `win-64` via [`.github/workflows/windows-conda.yml`](./.github/workflows/windows-conda.yml)
 - `osx-arm64` via [`.github/workflows/macos-conda.yml`](./.github/workflows/macos-conda.yml)
 
+For each of those targets, the recipe is configured to build conda packages for:
+
+- Python `3.12`
+- Python `3.13`
+- Python `3.14`
+
 The macOS target is `osx-arm64` because the workflow runs on `macos-latest`,
 which GitHub currently documents as an Apple Silicon runner. Source:
 [GitHub-hosted runners reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
@@ -65,7 +71,7 @@ configured in this repository at the moment.
 
 - `src/wavping/`: Python package, CLI entry point, and native extension sources
 - `third_party/miniaudio/`: vendored upstream dependency and license file
-- `recipe/`: conda recipe with `meta.yaml`, `build.sh`, and `bld.bat`
+- `recipe/`: conda recipe with `meta.yaml`, `conda_build_config.yaml`, `build.sh`, and `bld.bat`
 - `examples/`: demo scripts for generating and playing a short ping sound
 - `tests/`: smoke tests for the public Python API
 
@@ -144,7 +150,7 @@ conda build recipe --output
 Upload the built package manually:
 
 ```bash
-anaconda upload "$(conda build recipe --output)"
+conda build recipe --output | xargs anaconda upload
 ```
 
 ### What the recipe does
@@ -152,6 +158,7 @@ anaconda upload "$(conda build recipe --output)"
 The conda recipe:
 
 - builds only for Python `>=3.9`
+- emits package variants for Python `3.12`, `3.13`, and `3.14`
 - compiles both C and C++ extension sources
 - installs the package with `pip`
 - smoke-tests `import wavping` and `python -m wavping --version`
@@ -169,13 +176,16 @@ Each workflow:
 - runs on pushes to `main`
 - runs on pull requests
 - supports manual `workflow_dispatch`
-- uploads the built package as a workflow artifact
+- uploads the built packages as workflow artifacts
 
 Current artifact names:
 
 - `wavping-conda-linux-64`
 - `wavping-conda-macos`
 - `wavping-conda-win-64`
+
+Each artifact now contains all package files generated for that platform's
+Python variants, rather than a single `py312` package.
 
 If the repository secret `ANACONDA_API_TOKEN` is configured, a tag push matching
 `v*` also triggers upload to Anaconda.org with `--skip-existing`.

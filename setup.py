@@ -35,7 +35,7 @@ ext_modules = [
 ]
 setup(
     name="wavping",
-    version="0.1.0",
+    version="0.1.3",
     description="Play short WAV files from Python using a tiny native backend.",
     long_description=README,
     long_description_content_type="text/markdown",

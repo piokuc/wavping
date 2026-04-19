@@ -102,9 +102,9 @@ jobs:
             echo "Missing required GitHub secret: ANACONDA_API_TOKEN" >&2
             exit 1
           fi
-          mapfile -t package_paths < <(find "$RUNNER_TEMP/wavping-conda-macos" -type f \( -name '*.conda' -o -name '*.tar.bz2' \) | sort)
-          if [ "${#package_paths[@]}" -eq 0 ]; then
+          package_path="$(find "$RUNNER_TEMP/wavping-conda-macos" -type f \( -name '*.conda' -o -name '*.tar.bz2' \) -print -quit)"
+          if [ -z "$package_path" ]; then
             echo "No conda package artifact found to upload" >&2
             exit 1
           fi
-          python -m binstar_client.scripts.cli -t "$ANACONDA_API_TOKEN" upload --skip-existing "${package_paths[@]}"
+          python -m binstar_client.scripts.cli -t "$ANACONDA_API_TOKEN" upload --skip-existing "$package_path"
